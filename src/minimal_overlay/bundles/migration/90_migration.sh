@@ -7,5 +7,5 @@
 # will be executed first and '99_something.sh' will be executed last.
 
 cat << CEOF
-[31m  [migration][0m [1mType "migration" to start benchmark].[0m
+Type "migration" to start the benchmark
 CEOF

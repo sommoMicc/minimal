@@ -10,7 +10,9 @@
 #include <time.h>
 #include <math.h>
 #include <stdint.h>
+#include <string.h>
 
+const char* file_name = "results.csv";
 //Effettua la computazione
 void do_computation(int* array, int array_length) {
     for(int j = 0; j < array_length; j++) {
@@ -47,20 +49,23 @@ int main(int argc, char *argv[]) {
     printf("Inizio benchmark\nCPU: %d\n\n", get_CPU_number());
     srand(time(0));
 
+    //Elimino eventuali risultati pre-esistenti
+    remove(file_name);
+
     //Valori predefiniti per numero di iterazioni e valore iniziale di complessità
     if(argc < 2) {
-        argv[1] = "10000"; //Numero di iterazioni
-        argv[2] = "10"; //Valore iniziale di complessità
+        argv[1] = "100"; //Valore iniziale di complessità
+        argv[2] = argv[1]; //Incremento di complessità ad ogni iterazione
     }
 
     long i =0;
-    const long iterations = atoi(argv[1]);
-    const long initial_computation_complexity = atoi(argv[2]);
+    const long iterations = 10000; //Numero di iterazioni
+    const int complexity_increment = atoi(argv[2]);
 
-    for(int complexity_factor = 1; complexity_factor <= 6; complexity_factor++) {
-        const int computation_complexity = pow(initial_computation_complexity,complexity_factor); 
+    for(int computation_complexity = atoi(argv[1]); computation_complexity <= 1000000; computation_complexity+=complexity_increment) {
+        //const int computation_complexity = pow(initial_computation_complexity,complexity_factor); 
 
-        printf("------\nIterazioni: %ld, complessita: %d", iterations, computation_complexity);
+        printf("------\nIterazioni: %ld, complessita: %d, incremento: %d", iterations, computation_complexity, complexity_increment);
 
         //Contatori del numero di iterazioni per tipo (migration o non migration/normali/sequenziali)
         int migration_iterations = 0;
@@ -124,6 +129,20 @@ int main(int argc, char *argv[]) {
         printf("\navg_migration=%.2fnms, avg_sequential=%.2fms",avg_migration,avg_sequential);
         printf("\ntotal_migration=%d, total_sequential=%d", migration_iterations, normal_iterations);
         printf("\n- Delta: %.2fms, %.2f%%\n", avg_migration - avg_sequential, (avg_migration - avg_sequential)*100/avg_sequential);
+
+        FILE *fp;
+        int x = 10;
+
+        fp = fopen(file_name, "a");
+        if(fp != NULL) {
+            //Riga del file formato "Array_Size;AVG_Migration;AVG_Sequential;Delta(ms)"
+            fprintf(fp,"%f;%.2f;%.2f;%.2f\n", computation_complexity*4.0/1000.0,avg_migration,avg_sequential,avg_migration - avg_sequential);
+            fclose(fp);
+        }
+        else {
+            printf("\nErrore apertura file");
+        }
+
     }
     return EXIT_SUCCESS;
 }
