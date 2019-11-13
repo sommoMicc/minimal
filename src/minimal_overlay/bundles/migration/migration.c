@@ -15,18 +15,23 @@
 const char* file_name = "results.csv";
 //Effettua la computazione
 void do_computation(int* array, int array_length) {
+
     for(int j = 0; j < array_length; j++) {
         const int x = rand() % array_length;
         const int y = rand() % array_length;
         array[j] = (array[x] * array[y]) % array_length;
     }
+
 }
 
 //Inizializza l'array oggetto della computazione
-void init_array(int* array, int array_length) {
+int* init_array(int array_length) {
+    int* array = malloc(sizeof(int) * array_length);
+
     for(int i=0; i<array_length; i++) {
         array[i] = 1;
     }
+    return array;
 }
 
 //Ritorna l'indice della CPU in cui il processo è in 
@@ -62,10 +67,10 @@ int main(int argc, char *argv[]) {
     const long iterations = 10000; //Numero di iterazioni
     const int complexity_increment = atoi(argv[2]);
 
-    for(int computation_complexity = atoi(argv[1]); computation_complexity <= 1000000; computation_complexity+=complexity_increment) {
+    for(int computation_complexity = atoi(argv[1]); computation_complexity <= 10000000; computation_complexity+=complexity_increment) {
         //const int computation_complexity = pow(initial_computation_complexity,complexity_factor); 
 
-        printf("------\nIterazioni: %ld, complessita: %d, incremento: %d", iterations, computation_complexity, complexity_increment);
+        printf("------\nIterazioni: %ld, complessita: %d, size: %.1f, incremento: %d", iterations, computation_complexity, computation_complexity * sizeof(int) / 1000.0, complexity_increment);
 
         //Contatori del numero di iterazioni per tipo (migration o non migration/normali/sequenziali)
         int migration_iterations = 0;
@@ -75,8 +80,9 @@ int main(int argc, char *argv[]) {
         uint64_t total_migration_delays = 0;
         uint64_t delta_us;
 
-        int array[computation_complexity];
-        init_array(array, computation_complexity); 
+        //float real_time, proc_time;
+
+        int* array = init_array(computation_complexity); 
 
         for(int i=0; i < iterations; i++) {
             struct timespec start, end;
@@ -111,6 +117,7 @@ int main(int argc, char *argv[]) {
             
             //Calcolo il tempo della computazione
             delta_us = (end.tv_sec - start.tv_sec) * 1000000 + (end.tv_nsec - start.tv_nsec) / 1000;
+            //delta_us = proc_time;
             if(do_migration) { 
                 total_migration_delays += delta_us;
                 migration_iterations++;
@@ -143,6 +150,7 @@ int main(int argc, char *argv[]) {
             printf("\nErrore apertura file");
         }
 
+        free(array);
     }
     return EXIT_SUCCESS;
 }
