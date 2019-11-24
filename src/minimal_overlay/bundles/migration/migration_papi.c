@@ -11,6 +11,7 @@
 #include <math.h>
 #include <stdint.h>
 #include <string.h>
+#include <papi.h>
 
 const char* file_name = "results.csv";
 //Effettua la computazione
@@ -54,6 +55,12 @@ int main(int argc, char *argv[]) {
     printf("Inizio benchmark\nCPU: %d\n\n", get_CPU_number());
     srand(time(0));
 
+    long_long start_cycles, end_cycles, start_usec, end_usec;
+    int EventSet = PAPI_NULL;
+        
+    if (PAPI_library_init(PAPI_VER_CURRENT) != PAPI_VER_CURRENT)
+        exit(1);
+
     //Elimino eventuali risultati pre-esistenti
     remove(file_name);
 
@@ -76,16 +83,15 @@ int main(int argc, char *argv[]) {
         int migration_iterations = 0;
         int normal_iterations = 0;
 
-        uint64_t total_sequential_delays = 0;
-        uint64_t total_migration_delays = 0;
-        uint64_t delta_us;
+        double total_sequential_delays = 0;
+        double total_migration_delays = 0;
+        double delta_us;
 
         //float real_time, proc_time;
 
         int* array = init_array(computation_complexity); 
 
         for(int i=0; i < iterations; i++) {
-            struct timespec start, end;
 
             //Migro i processi solo nelle iterazioni pari
             bool do_migration = (i % 2 == 0);
@@ -97,7 +103,8 @@ int main(int argc, char *argv[]) {
             CPU_SET(nextCPU, &target);
 
             //Avvio il cronometro
-            clock_gettime(CLOCK_MONOTONIC_RAW, &start);
+            start_usec = PAPI_get_real_usec();
+
             //Se è il caso, effettuo la migrazione
             if(do_migration) {
                 sched_setaffinity(0, sizeof(target), &target);
@@ -113,10 +120,10 @@ int main(int argc, char *argv[]) {
             do_computation(array,computation_complexity);
 
             //Fermo il cronometro
-            clock_gettime(CLOCK_MONOTONIC_RAW, &end);
-            
+            end_usec = PAPI_get_real_usec();            
             //Calcolo il tempo della computazione
-            delta_us = ((end.tv_sec - start.tv_sec) * 1000000000L + (end.tv_nsec - start.tv_nsec)) / 1000.0;
+            delta_us = (end_usec - start_usec) / 1000.0; //microseconds to milliseconds;
+
             //delta_us = proc_time;
             if(do_migration) { 
                 total_migration_delays += delta_us;

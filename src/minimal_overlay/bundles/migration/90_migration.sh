@@ -8,4 +8,5 @@
 
 cat << CEOF
 Type "migration" to start the benchmark
+Type "migration_papi" to start the benchmark using PAPI libraries
 CEOF
